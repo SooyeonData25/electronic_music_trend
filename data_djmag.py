@@ -54,11 +54,11 @@ class DJMagScraper:
                     # Split into title and label
                     parts_track_info = track_info.split("[")
                     if len(parts_track_info) > 1:
-                        track_title = track_info.split("[")[0].strip().strip("'")
+                        track_title = track_info.split("[")[0].strip().strip("‘").strip("’").strip("'")
                     else:
                         artist_name, track_title = track_info, ""
 
-                if self.year in [2021, 2022]:
+                elif self.year in [2021, 2022]:
                     parts = content_info.split("'")
                     # Split number info into artist an
                     if len(parts) > 1:
@@ -66,14 +66,36 @@ class DJMagScraper:
                         track_title = parts[1].strip()
                     else:
                         artist_name, track_title = content_info, ""
-                if self.year in [2019]:
+
+                elif self.year in [2019]:
                     parts = track_info.split("'")
                     if len(parts) > 1:
                         artist_name = parts[0].strip()
                         track_title = parts[1].strip()
                     else:
                         artist_name, track_title = track_info, ""
+                else: artist_name, track_title = "", ""
 
+                #clean data
+                if "&" in artist_name or "," in artist_name or "x" in artist_name:
+                    import re
+                    parts = re.split(r"[,&x]", artist_name)
+                    artist_name = parts[0].strip()
+
+                if "feat" in track_title:
+                    parts = track_title.split("feat")
+                    title = parts[0].strip().strip("’")
+                    track_title = title
+
+                if "ft." in track_title:
+                    parts = track_title.split("ft")
+                    title = parts[0].strip().strip("’")
+                    track_title = title
+
+                if "(" in track_title:
+                    parts = track_title.split("(")
+                    title = parts[0].strip().strip("’")
+                    track_title = title
 
                 self.tracks.append(Track(artist_name, track_title, self.year))
 
@@ -100,6 +122,7 @@ class TrackExporter:
             writer = csv.writer(f)
             writer.writerow(["DJmag_top_track_year", "artist", "title"])
             for track in tracks:
+                print(f"{track.year} - {track.artist} - {track.title}")
                 writer.writerow([track.year, track.artist, track.title])
 
 # test for top tracks in 2024
@@ -117,12 +140,7 @@ if __name__ == "__main__":
         tracks = scraper.parse_tracks()
         all_tracks.extend(tracks)   # append results
 
-    # Show preview
-    for t in all_tracks[:5]:
-        print(t)
-
     # Export everything
     TrackExporter.to_csv(all_tracks)
-
 
 
